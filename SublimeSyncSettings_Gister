@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+
+
+gist = '4956ae7b9e5161fc28a717a671df6d7e'
+token = ''
+BASE_URL = 'https://api.github.com'
+response = requests.get(self.BASE_URL + '/user?access_token=' + token)

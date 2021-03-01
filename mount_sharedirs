@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+function mount_sharedirs {
+    A="$(which vmware-hgfsclient)"
+    B="$(which vmhgfs-fuse)"
+    if [ ! -x "$A" -o ! -x "$B" ]; then
+        echo "$A or $B isn't installed. Exiting."
+        return 1
+    fi
+    U="${USER:-$UID}"
+    HGFS_DIR="/media/$U/hgfs"
+    for d in $(vmware-hgfsclient); do
+        #if [ ! $(check_mounted "$d") -eq 0 ]; then
+            X="$HGFS_DIR/$d"
+            sudo mkdir -p "$X"
+            sudo chown -R $U "$X"
+            vmhgfs-fuse ".host:$d" "$X" \
+                && echo "Mounted '$d' at '$X'" \
+                || echo "Error mounting '$d' at '$X'"
+        #fi
+    done
+}
+
+function check_mounted {
+    local CHECK="$1"
+    local MOUNTED
+    for f in $(mount | grep ^vmhgfs-fuse | cut -d' ' -f3); do 
+        MOUNTED="$MOUNTED $f"
+    done
+    echo "$CHECK" | grep -c $MOUNTED
+}
+
+mount_sharedirs
+
+exit 0

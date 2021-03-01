@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+THIS_SCRIPT="$(basename "${BASH_SOURCE[0]}")"
+
+if [[ $# -ne 2 ]]; then
+    echo "Usage: $THIS_SCRIPT <from path> <to path>" >&2
+    exit 1
+fi
+
+if type -p osascript &>/dev/null; then
+    echo "This program requires 'osascript' on macOS."
+    exit 1
+fi
+
+from="$(realpath "$1")"
+todir="$(dirname "$(realpath "$2")")"
+toname="$(basename "$(realpath "$2")")"
+
+if [ -f "$from" ]; then
+    type="file"
+elif [ -d "$from" ]; then
+    type="folder"
+else
+    echo "mkalias: invalid path or unsupported type: '$from'" >&2
+    exit 1
+fi
+
+osascript <<EOF
+tell application "Finder"
+    make new alias to $type (posix file "$from") at (posix file "$todir")
+    set name of result to "$toname"
+end tell
+EOF

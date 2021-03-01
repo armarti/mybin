@@ -1,0 +1,7 @@
+#!/bin/sh
+
+/bin/rm -rf \
+    /Users/dcmorse/Library/Caches/com.logmein.Rescue \
+    /Users/dcmorse/Library/Saved\ Application\ State/com.logmein.* \
+    /private/var/tmp/LogMeIn* \
+    $HOME/Library/LaunchAgents/com.logmein.*

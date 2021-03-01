@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+START_PORT=1
+END_PORT=65535
+RIP=$(randip4)
+JSON=$(curl -s ipinfo.io/$RIP)
+
+IP="$(echo $JSON | jq -r '.ip')"
+HOST="$(echo $JSON | jq -r '.hostname')"
+
+#echo -e "${BASH_SOURCE[0]}\n$_"
+if [ "${BASH_SOURCE[0]}" == "$_" ]; then
+	echo -e "\n$IP\n$HOST\n"
+else
+	echo "$IP"
+fi
+
+# setup log file
+LOGFILE="$1"
+LOGDEFAULT="${HOST/No Hostname/$IP=IPV4}" 
+LOGDEFAULT=$(eval echo "~/Documents/randomain/${LOGDEFAULT}.randomain-log")
+#LOGDEFAULT="~/Documents/randomain/${HOST}_${IP}_$(date --utc +%Y%m%d_%H:%M:%S%Z).randomain-log"
+
+if [[ ${#LOGFILE} == 0 ]]; then LOGFILE="$LOGDEFAULT"; fi
+LOGFILE="${LOGFILE/ /}"
+LOGDIR=$(python -c "print('/'.join(\"$LOGFILE\".split('/')[0:-1]))")
+mkdir -p "$LOGDIR"
+
+~/bin/open-port-test.sh $START_PORT $END_PORT "$IP" "vw3" "$LOGFILE"
+echo "Port test log available at \"$LOGFILE\"."

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+FLDR="${1:-$PWD}"
+
+cp "$FLDR" "${FLDR}.backup"
+cd "$FLDR"
+mkdir -p docs
+mkdir -p schemas
+
+for d in $(ls -d ./* | grep -vw schemas | grep -vw docs); do 
+	cd $d
+	echo "----> In $PWD"
+	for z in $(ls *schema*.zip 2>/dev/null); do
+		z=${z/ /}
+		echo "--------> Unzipping $d/$z"
+		unzip -o $z -d ../schemas/${z/.zip/} && \
+			rm -f $z
+	done
+	for z in $(ls *docs*.zip 2>/dev/null); do
+		z=${z/ /}
+		echo "--------> Unzipping $d/ $z"
+		unzip -o $z -d ../docs/${z/.zip/} && \
+			rm -f $z
+	done
+	rm -rf .stfs
+	cd ..
+	rm -rf $d
+done
+rm -rf .stfs

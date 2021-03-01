@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+import requests as req
+import sys
+
+# https://passwordwolf.com#apiusage
+# http://www.url-encode-decode.com
+
+passlength = 15
+numpass = 17
+
+#print(sys.argv)
+
+if len(sys.argv) == 1:
+    print("\nUSAGE:\nnupass [password_length] [number of pws to return]")
+elif len(sys.argv) == 2:
+    print("\nUSAGE:\nnupass [password_length] [number of pws to return]")
+    passlength = sys.argv[1]
+elif len(sys.argv) == 3:
+    print("\nUSAGE:\nnupass [password_length] [number of pws to return]")
+    passlength = sys.argv[1]
+    numpass = sys.argv[2]
+
+print("\nsetting password length to", passlength)
+print("\nfetching", numpass, "passwords")
+
+excl_chars = r'%60~!%40%23%24%25%5E%26()_%3D%5C%7C%7D%5D%7B%5B%22%27%3A%3B%3E%3F%3C%2CtgbyhnujmikolpTGBYHNUJMIKOLP'
+url = r'https://passwordwolf.com/api/?length=' + str(passlength) + '&exclude=' + excl_chars + '&repeat=' + str(numpass)
+doc = req.get(url).json()  #;print(doc)
+passes = [elem['password'] for elem in doc]  #;print(passes)
+phonetics = [elem['phonetic'] for elem in doc]  #;print(phonetics)
+pretty_passes = '\n'.join([str(i) for i in passes])
+print('\n' + pretty_passes + '\n')

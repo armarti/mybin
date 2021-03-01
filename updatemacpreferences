@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+
+DO_WHAT="$1"
+REPO="git@github.com:armarti/MacTweaks.git"
+cd "$HOME"
+
+function git_tracked_files() {
+    git ls-tree -r master --name-only
+}
+
+function backup_files {
+	OLD_IFS="$IFS"
+	IFS="
+"
+	for f in $(git_tracked_files); do
+		local OLDDIR=$(dirname "$f")/.old
+		mkdir -p "$OLDDIR"
+		local BNAME=$(basename $f)
+		cp -f "${f}" "$OLDDIR/${BNAME}"
+	done
+	IFS="$OLD_IFS"
+}
+
+function deactivate_git() {
+    if [ -d ".git" ]; then
+        mv .git .macpreferences.git
+    fi
+    if [ -f ".gitignore" ]; then
+        mv .gitignore .macpreferences.gitignore
+    fi
+}
+
+function activate_git() {
+	if [ -d ".macpreferences.git" ]; then
+		mv .macpreferences.git .git
+    fi
+	if [ ! -d ".git" ]; then
+		git init
+	fi
+	if [ -f ".macpreferences.gitignore" ]; then
+        mv .macpreferences.gitignore .gitignore
+    fi
+}
+
+function add_remote_if_none() {
+	if [ -z "$(git remote -v)" ]; then
+		git remote add origin $REPO
+	fi
+}
+
+function remove_dotold_files() {
+	OLD_IFS="$IFS"
+	IFS="
+"
+	for d in $(git_tracked_files | grep -F '/.old/'); do
+		git rm --cached -rf "$d"
+	done
+	IFS="$OLD_IFS"
+}
+
+if [[ "$DO_WHAT" == "add" ]]; then
+	activate_git
+	git add ${@:2}
+	#remove_dotold_files
+	deactivate_git
+elif [[ "$DO_WHAT" == "rm" || "$DO_WHAT" == "remove" ]]; then
+	activate_git
+	git rm --cached ${@:2}
+	deactivate_git
+elif [[ "$DO_WHAT" == "pull" ]]; then
+	activate_git
+	backup_files
+	add_remote_if_none
+	git fetch
+	git reset --quiet --hard origin/master
+    deactivate_git
+elif [[ "$DO_WHAT" == "push" ]]; then
+	activate_git
+	remove_dotold_files
+	git commit --message="${HOSTNAME:-$(hostname)} changes $(date)" --all --untracked-files=no
+	git push --all --quiet
+	deactivate_git
+else
+	echo "Specify 'push' or 'pull' or 'rm' or 'add'"
+fi
+
+echo "Done."

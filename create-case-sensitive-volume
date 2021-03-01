@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+#hdiutil create -type SPARSEBUNDLE -size 20g -fs "Case-sensitive APFS" -attach -volname ArangoDB_WASM ./ArangoDB_WASM.sparsebundle
+
+NAME_DEF=""
+while [ 1 -eq 1 ]; do
+	read -p "Name? " NAME
+	if [ -z "$NAME" ]; then
+		echo "Can't be blank"
+	else
+		break
+	fi
+done
+
+LOCATION_DEF="$PWD"
+while [ 1 -eq 1 ]; do
+	read -p "Location [$LOCATION_DEF]? " LOCATION
+	if [ -z "$LOCATION" ]; then LOCATION="$LOCATION_DEF"; fi
+	if [[ "$LOCATION" =~ /$ ]]; then LOCATION="$(dirname "$LOCATION")"; fi
+	if [ ! -d "$LOCATION" ]; then
+		echo "That's not a directory."
+	else
+		break
+	fi
+done
+
+SIZE_DEF="20g"
+while [ 1 -eq 1 ]; do
+	read -p "Max size [$SIZE_DEF]? " SIZE
+	if [ -z "$SIZE" ]; then SIZE="$SIZE_DEF"; fi
+	if [[ ! "$SIZE" =~ ^[0-9]+(g|m|k|b)$ ]]; then
+		echo "Invalid size"
+	else
+		break
+	fi
+done
+
+COMMAND="hdiutil create -type SPARSEBUNDLE -size $SIZE -fs \"Case-sensitive APFS\" -attach -volname $NAME \"$LOCATION/$NAME.sparsebundle\""
+echo -n "Press enter to run '$COMMAND' "
+read -p "" X
+
+VOLDIR="$(eval "$COMMAND" | rev | cut -d$'\t' -f1 | cut -d' ' -f2 | rev | grep '/Volumes/')"
+
+read -p "Press enter to setup a git repo in '$VOLDIR'." X
+
+cd "$VOLDIR"
+git init
+echo -e '.fseventsd\n.Trashes\n.DS_Store' >>.gitignore
+echo "# $NAME" >>README.md
+git add .gitignore README.md
+
+open "$LOCATION"
+
+echo "Done."

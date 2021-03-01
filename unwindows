@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+function unwin_files() {
+	ARGS=$@
+	for fd in $ARGS; do
+		if [ -d $fd ]; then
+			echo "directory"
+			fd=$(echo $fd | grep -Eq '/$' && echo $fd || echo "$fd/")
+			unwin_files $(ls ${fd}*)
+		elif [ -f $fd ]; then
+			echo "Fixing $fd"
+			sed -i 's/\r\n/\n/g' $fd
+		else 
+			echo "Invalid argument."
+			exit 1
+		fi
+	done
+}
+
+unwin_files $@
+exit 0

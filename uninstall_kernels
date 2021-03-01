@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+VERSIONS_INSTALLED=$(dpkg -l | grep '^i' | grep -E '(linux\-headers|linux\-image|linux\-signed\-image)' | awk '{print $2}' | sed -e 's/^[a-zA-Z\-]\+\([0-9]\+\)/\1/g' | grep -vE '^[a-zA-Z]' | grep -vE '[0-9]\-[a-zA-Z]+$' | sort -u)
+CURR_VERSION=$(uname -r | sed -e 's/\([0-9]\)-[a-zA-Z]\+$/\1/')
+CURR_VERSION_IDX=$(echo $VERSIONS_INSTALLED | tr ' ' '\n' | grep -n $CURR_VERSION | cut -d: -f1)
+VERSIONS_TO_UNINSTALL=$(echo $VERSIONS_INSTALLED | tr ' ' '\n' | grep -n . | grep ^1: -A$((CURR_VERSION_IDX - 3)) | cut -d: -f2)
+PACKAGES_TO_UNINSTALL=$(dpkg -l | grep '^i' | grep -E '(linux\-headers|linux\-image|linux\-signed\-image)' | awk '{print $2}' | grep "$VERSIONS_TO_UNINSTALL")
+sudo aptitude remove $PACKAGES_TO_UNINSTALL || sudo apt-get remove $PACKAGES_TO_UNINSTALL
+exit 0

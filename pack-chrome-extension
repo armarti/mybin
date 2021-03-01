@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+EXT_PATH="$1"
+PEM_PATH="$(dirname $EXT_PATH)/$(basename $EXT_PATH).pem"
+echo EXT_PATH=$EXT_PATH
+echo PEM_PATH=$PEM_PATH
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --pack-extension="$EXT_PATH" --pack-extension-key="$PEM_PATH"

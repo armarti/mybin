@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+lftp ftp.muffnet.xyz -e 'set ftps:initial-prot ""; set ftp:ssl-force true; set ftp:ssl-protect-data true; set ssl:verify-certificate no; user homelab EnglishMuff1ns; dir;'
+

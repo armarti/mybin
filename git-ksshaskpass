@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+# from http://git.661346.n2.nabble.com/Git-ksshaskpass-to-play-nice-with-https-and-kwallet-td6858195.html
+
+set $* 
+exec ksshaskpass $1\@$3 

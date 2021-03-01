@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+function check_package() {
+	which $1 &>/dev/null
+	# which dpkg-query &>/dev/null || return 0  # just try to run anyway
+	# dpkg-query -W $1 &>/dev/null && return 0
+	# which apt &>/dev/null && sudo apt install $1 && return 0
+	# echo "Install $1 first"; exit 1
+}
+
+JSON=""
+DOMAINNAME=""
+function get_randip() {
+	RIP=$(randip4)
+	check_package curl && JSON=$(curl -s http://ipinfo.io/$RIP)
+	check_package jq && DOMAINNAME="$(echo $JSON | jq -r '.hostname')" \
+		|| DOMAINNAME=$(echo $JSON | grep -E '^\s*"hostname"' | sed 's/ *"//g')
+	#echo $JSON #| grep -E '^\s*"hostname"' | sed 's/ *"//g'
+}
+
+TRY=0
+get_randip
+if [[ "$1" == '-f' || "$1" == 'force' || "$1" == '--force' || "$1" == 'f' ]]; then
+	echo "Polling til we get a hostname"
+	while [[ "$DOMAINNAME" == "null" ]]; do
+		echo "Try $(( ++TRY ))"
+		get_randip
+	done
+fi
+
+if [ -n "$1" ]; then
+	PYSTR='import json,sys;j=json.load(sys.stdin);print("\n".join(["{0}: {1}".format(k,v) for k,v in j.items()]));'
+	PYSTR="${PYSTR}q=j.get(\"loc\");s=\"maps: https://encrypted.google.com/maps/@{0},13z\".format(q) if q else \"\";e=\"\\n\" if s else s;print(s,end=e);"
+	echo -n $JSON | python -c "$PYSTR"
+	echo -n "hostname: "
+fi
+echo $DOMAINNAME
+exit 0

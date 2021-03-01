@@ -1,0 +1,17 @@
+#!/usr/bun/env bash
+
+setup_linux_chrome_for_factset_auth () 
+{ 
+    echo "creating /etc/opt/chrome/policies/managed/";
+    sudo mkdir -p /etc/opt/chrome/policies/managed/;
+    echo "creating /etc/opt/chrome/policies/recommended/";
+    sudo mkdir -p /etc/opt/chrome/policies/recommended/;
+    echo "creating policies/managed/factset.io.json";
+    sudo echo '{"AuthServerWhitelist": "*.factset.io", "AuthNegotiateDelegateWhitelist": "*.factset.io" }' > /etc/opt/chrome/policies/managed/factset.io.json;
+    echo "creating policies/managed/factset.com.json";
+    sudo echo '{"AuthServerWhitelist": "*.factset.com", "AuthNegotiateDelegateWhitelist": "*.factset.com" }' > /etc/opt/chrome/policies/managed/factset.com.json;
+    echo "other policy settings: https://www.chromium.org/administrators/policy-list-3";
+    echo
+}
+
+setup_linux_chrome_for_factset_auth

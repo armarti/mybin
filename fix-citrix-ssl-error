@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+sudo ln -fs /usr/share/ca-certificates/mozilla/* /opt/Citrix/ICAClient/keystore/cacerts
+sudo /opt/Citrix/ICAClient/util/ctx_rehash
+echo -e "\nMake sure you're using the 32-bit Citrix"
+/opt/Citrix/ICAClient/util/configmgr &
+

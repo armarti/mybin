@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+if [ $(which brew &>/dev/null; echo $?) -eq 0 ]; then
+    echo "You need to install Homebrew first"
+    exit 1
+fi
+
+brew install haskell-stack
+bash <(curl https://nixos.org/nix/install)
+echo -e 'nix\n  enable: true' >> ~/.stack/config.yaml
+nix-env --install --attr cachix --file https://cachix.org/api/v1/install
+cachix use hie-nix

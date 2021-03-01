@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+
+###############################################################################
+#  INPUT VALIDATION & CONFIGURATION                                           #
+###############################################################################
+
+START_PORT="$1"
+END_PORT="$2"
+TARGET="$3"
+ARGUMENTS="$4"
+OUTPUT="$5"
+USER_UPDATE_INTERVAL=10
+
+CANCOLOR=0
+WILLCOLOR="never"
+if (test -t 1); then 
+    ncolors=$(tput colors)
+    if (test -n "$ncolors") && (test $ncolors -ge 8); then 
+        CANCOLOR=1
+        WILLCOLOR="always"
+    fi
+fi
+
+if [ "$OUTPUT" == "" ]; then OUTPUT="/tmp/$TARGET"; fi
+###############################################################################
+#  DEBUG STUFF                                                                #
+###############################################################################
+
+DODEBUG=false
+# DODEBUG=true
+if $DODEBUG; then
+    START_PORT=52
+    END_PORT=81
+    TARGET=192.168.0.1
+    ARGUMENTS='vw1'
+    OUTPUT='/tmp/porttest.temp'
+    echo "OUTPUT=\"$OUTPUT\""
+    >"$OUTPUT"
+fi
+
+###############################################################################
+#  NICETIES                                                                   #
+###############################################################################
+
+INFO="\n
+USAGE: $0 START_PORT END_PORT TARGET ARGUMENTS [OUTPUT_FILE]\n\n
+Arguments:\n
+	\"vw3\" - ACTIVE + TIMEOUT (default)\n
+	\"zv\" - PASSIVE: this one just checks for listening daemons\n
+	\"v\" - ACTIVE: this one tests ports by sending data\n
+	\"nv\" - NO-DNS: this one doesnt do DNS lookups, only use with IP addresses\n
+	\"nw5\" - ACTIVE + TIMEOUT + no dns\n"
+
+TST="$START_PORT$END_PORT$TARGET$ARGUMENTS"
+TST="${TST/ /}"
+if [ "$TST" == "" ]; then 
+    echo -e $INFO
+    exit 1
+else
+    echo "
+Command: nc -$ARGUMENTS $TARGET 
+Portscan Range: $START_PORT
+Log file: $OUTPUT
+"
+fi
+
+if [ "$ARGUMENTS" == "" ]; then ARGUMENTS="vw3"; fi
+if [[ $START_PORT > $END_PORT ]]; then 
+    X=$START_PORT
+    START_PORT=$END_PORT
+    END_PORT=$X
+fi
+
+echo -e "\nChecking ports ..."
+echo "
+##########################
+$(date --utc)
+nc -$ARGUMENTS $TARGET 
+Start Port: $START_PORT
+  End Port: $END_PORT
+       Log: $OUTPUT
+##########################" >>"$OUTPUT"
+
+###############################################################################
+#  STUFF HAPPENING                                                            #
+###############################################################################
+
+PORT_RANGE=$(seq $START_PORT $END_PORT)
+COUNTER=0
+PORTNUM=$(($END_PORT - $START_PORT))
+for PORT in $PORT_RANGE; do
+
+	nc -$ARGUMENTS $TARGET $PORT &>>$OUTPUT
+	RESULT="$(tail -n1 $OUTPUT | grep --line-buffered --color=$WILLCOLOR '.*succeeded.*')"
+
+	if [[ ${#RESULT} > 0 ]]; then 
+        echo $RESULT
+        COUNTER=$((COUNTER + 1))
+    fi
+
+	# keep informed
+	if [ $(($PORT % $USER_UPDATE_INTERVAL)) == 0 ]; then 
+		PCT_DONE="$(( 100 * ($PORT - $START_PORT) / ($END_PORT - $START_PORT) ))"
+		echo "Completed port $PORT... ($PCT_DONE%)"
+	fi
+done
+
+###############################################################################
+#  STOP THE STUFF                                                             #
+###############################################################################
+
+echo -e "
+DONE!
+            Target: $TARGET
+         Num ports: $PORTNUM
+    Num accessible: $COUNTER
+    Pct accessible: $((100 * $COUNTER / $PORTNUM))%
+               Log: $OUTPUT
+"
+echo -e "##########################\n" >>"$OUTPUT"
+rm -f "$OUTPUT"

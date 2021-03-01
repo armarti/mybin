@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+RANDIP4="$(qnums --type=uint8 --length=4 --size=1 --sep=.)"
+echo "$RANDIP4"

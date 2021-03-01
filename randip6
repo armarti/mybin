@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# e.g.:
+# 2001:0DB8:0000:2F3B:02AA:00FF:FE28:9C5A
+# 2001:DB8:0:2F3B:2AA:FF:FE28:9C5A
+RANDIP6="$(qnums --type=hex16 --length=8 --size=2 --sep=:)"
+echo "$RANDIP6" | sed 's/:0*/:/g' | sed 's/::/:0:/g'

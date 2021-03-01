@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+ARG1="$1"
+if [ -z "$ARG1" ]; then
+    read -p "Office app: " ARG1
+fi
+
+if [[ "$ARG1" == "docs" ]]; then
+    APP_URL="https://docs.google.com/document/u/0/"
+elif [[ "$ARG1" == "sheets" ]]; then
+    APP_URL="https://docs.google.com/spreadsheets/u/0/"
+elif [[ "$ARG1" == "drive" ]]; then
+    APP_URL="https://drive.google.com/drive/my-drive"
+elif [[ "$ARG1" == "slides" ]]; then
+    APP_URL="https://docs.google.com/presentation/u/0/"
+else
+    echo "That's not a valid application"
+    exit 1
+fi
+
+PROFILE_DIR="$HOME/Google Office"
+mkdir -p "$PROFILE_DIR"
+
+HAS_KWALLET=$(which kwallet &>/dev/null; echo $?)
+HAS_GNOME=$(which gnome-keyring &>/dev/null; echo $?)
+if [ $HAS_KWALLET -eq 0 ]; then
+    STORE=kwallet
+elif [ $HAS_GNOME -eq 0 ]; then
+    STORE=gnome
+else
+    STORE=basic
+fi
+
+google-chrome --user-data-dir="$PROFILE_DIR" --password-store=$STORE --app="$APP_URL"
+
+exit 0
+

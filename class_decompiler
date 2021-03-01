@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Decompiles any jar files in thuis directory and its subdirectories
+# Only "." in the jar name needs to be before the extension
+
+# deal with spaces in paths
+function escape_space() {
+	X="$@"
+	echo $(echo $X | sed 's/^\s*\(.\+\)$/\1/' | sed 's/\s*$//' | sed 's/\\//g' | sed 's/ /\\ /g')
+}
+
+# ensure we can access javap
+# e.g. /c/Program Files/Java/jdk1.8.0_121/bin/javap.exe
+which javap &>/dev/null
+if [ $? -eq 1 ]; then
+	JAVAP_EXE_DEFAULT="/c/Program Files/Java/jdk1.8.0_121/bin/javap.exe"
+	read -p "Enter the path to the javap executable [$JAVAP_EXE_DEFAULT]: " JAVAP_EXE
+	JAVAP_EXE="${JAVAP_EXE:-$JAVAP_EXE_DEFAULT}"
+else
+	JAVAP_EXE="$(which javap)"
+fi
+
+# convert all .jar files to .zip files
+function jars_to_zips() {
+	local CURR_DIR=$(escape_space ${1:-$PWD})
+	echo "Searching $CURR_DIR for jar files"
+	for JARFILE in $(find ${CURR_DIR} -type f -name *.jar); do
+		local START_DIR=$(pwd | escape_space)
+		local JARFILE=$(escape_space "$JARFILE")
+		local JAR_DIR=$(dirname $JARFILE)
+		local JAR_NAME_EXT=$(basename $JARFILE)
+		local JAR_NAME=$(echo $JAR_NAME_EXT | sed 's/\.jar$//')
+		cd ${JAR_DIR}
+		cp -f ${JAR_NAME_EXT} ${JAR_NAME}.zip
+		echo "Copied $JAR_DIR/$JAR_NAME_EXT to $JAR_DIR/${JAR_NAME}.zip"
+		cd ${START_DIR}
+	done
+	cd ${CURR_DIR}
+}
+
+# extract all zip files
+function extract_jars() {
+	local CURR_DIR=$(escape_space ${1:-$PWD})
+	echo "Searching $CURR_DIR for zip files"
+	for ZIPFILE in $(find ${CURR_DIR} -type f -name *.zip); do
+		local START_DIR=$(pwd | escape_space)
+		local ZIPFILE=$(escape_space "$ZIPFILE")
+		local ZIP_DIR=$(dirname $ZIPFILE)
+		local ZIP_NAME_EXT=$(basename $ZIPFILE)
+		local ZIP_NAME=$(echo $ZIP_NAME_EXT | sed 's/\.zip$//')
+		cd ${ZIP_DIR}
+		unzip -o ${ZIP_NAME_EXT} -d ${ZIP_NAME}
+		echo "Unzipped ${ZIP_NAME_EXT} to ${ZIP_NAME}"
+		cd ${ZIP_NAME}
+		jars_to_zips "$PWD"  # in case there are zips in jars
+		extract_jars "$PWD"  # in case there are jars in jars
+		cd ${START_DIR}
+	done
+	cd ${CURR_DIR}
+}
+
+# decompile all class files
+function decompile_classes() {
+	CURR_DIR=$(escape_space ${1:-$PWD})
+	echo "Using Java decompiler $JAVAP_EXE"
+	echo "Searching $CURR_DIR for class files"
+	for CLASSFILE in $(find ${CURR_DIR} -type f -name *.class); do
+		local START_DIR=$(pwd | escape_space)
+		local CLASSFILE=$(escape_space "$CLASSFILE")
+		local CLASS_DIR=$(dirname $CLASSFILE)
+		local CLASS_NAME_EXT=$(basename $CLASSFILE)
+		local CLASS_NAME=$(echo $CLASS_NAME_EXT | sed 's/\.class$//')
+		cd ${CLASS_DIR}
+		("$JAVAP_EXE" ${CLASS_NAME_EXT} > ${CLASS_NAME}.java && \
+			sed -i 's;^Compiled ;// Compiled ;' ${CLASS_NAME}.java && \
+			echo "Decompiled $CLASS_NAME_EXT to ${CLASS_NAME}.java") &
+		cd ${START_DIR}
+	done
+	cd ${CURR_DIR}
+}
+
+function delete_classes() {
+	CURR_DIR=$(escape_space ${1:-$PWD})
+	echo "Deleting class files in $CURR_DIR"
+	for CLASSFILE in $(find ${CURR_DIR} -type f -name *.class); do
+		rm -f "$CLASSFILE"
+		echo "Deleted $CLASSFILE"
+	done
+	cd ${CURR_DIR}
+}
+
+set +e
+
+DECOMPILE_DIR_ORIG=$(escape_space "${1:-$PWD}")
+DECOMPILE_DIR=${DECOMPILE_DIR_ORIG}-decompiled
+rm -rf ${DECOMPILE_DIR} &>/dev/null || true
+cp -rf ${DECOMPILE_DIR_ORIG} ${DECOMPILE_DIR}
+echo "Copied ${DECOMPILE_DIR_ORIG} to ${DECOMPILE_DIR}"
+cd ${DECOMPILE_DIR}
+
+jars_to_zips "$PWD" && extract_jars "$PWD" && decompile_classes "$PWD" && delete_classes "$PWD"
+
+exit 0

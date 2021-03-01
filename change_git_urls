@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]] || [[ "$1" == "" || "$2" == "" ]]; then
+    echo "Usage $(basename $0) <sed regex to replace in url> <start dir>"
+    exit 1
+fi
+
+REP="$1"
+SDIR="$(realpath "$2")"
+OLD_IFS="$IFS"
+IFS='
+'
+
+for r in $(find "$SDIR" -name ".git"); do
+    for g in $(git --git-dir=$r remote -v); do
+
+        Pg=$(echo $g | sed 's/\s\+/|/g' | sed 's/(\|)//g');
+        remurl=$(echo $Pg | cut -d'|' -f2);
+        newurl=$(echo $remurl | sed "$REP")
+
+        if [[ "$remurl" != "$newurl" ]]; then
+
+            #echo ">>>CHANGE<<<"
+            remname=$(echo $Pg | cut -d'|' -f1)
+            remoth=$(echo $Pg | cut -d'|' -f3)
+
+            if [[ "$remoth" == "push" ]]; then
+                P='--push '
+            else
+                P=''
+            fi
+
+            C="git --git-dir=$r remote set-url $P$remname $newurl"
+            echo -n "Run the command '$C' ? [y/N]: "
+            read A
+            if [[ "$A" =~ [yY] ]]; then
+                echo "Running"
+                eval "$C"
+            else
+                echo "Skipping"
+            fi
+        fi
+    done
+done
+
+IFS="$OLD_IFS"
+echo "Done."
+exit 0

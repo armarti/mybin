@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+# this one keeps trying to get a site
+
+RIP=$(randip4)
+JSON=$(curl -s ipinfo.io/$RIP)
+TRYFILE=.tryfile
+
+IP="$(echo $JSON | jq -r '.ip')"
+HOST="$(echo $JSON | jq -r '.hostname')"
+
+if [ "$HOST" == "No Hostname" ]; then
+	if [ -a $TRYFILE ]; then
+		CURRVAL=$(cat $TRYFILE)
+		echo $(($CURRVAL + 1)) > $TRYFILE
+		echo -ne "Try $CURRVAL\r"
+	else
+		echo 1 > $TRYFILE
+		echo -ne "Try 1\r"
+	fi
+	"$0"
+else
+	echo -ne "$HOST\n"
+	rm -f $TRYFILE
+fi

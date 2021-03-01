@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+# This is all adapted from the code in here:
+# 
+
+declare -u QNT_NAME USER_NAME JOB_NAME
+read -p "Client's QNT username: " QNT_NAME
+read -p "Client's username: " USER_NAME
+read -p "Job name: " JOB_NAME
+XML_FILE="${QNT_NAME}_${JOB_NAME}_PARAMETERS.XML"
+echo "Create file \"$XML_FILE\"?"
+read -p "Press ENTER to accept or CTRL+C to cancel." DUMMY
+
+URL_PATH="http://services.factset.com:80/live/service/CsSecureService"
+URL_QUERY="CONTENT_TYPE=text%2Fxml&USERNAME=${QNT_NAME/ /}&SERIAL_NUMBER=VP&XMLSTRING="
+
+# The unencoded string is this:
+# <?xml version="1.0" encoding="us-ascii"?>
+#     <cornerstone>
+#         <clientName>${USER_NAME}</clientName>
+#         <qntClientName>${QNT_NAME}</qntClientName>
+#         <jobAction>getJobParameters</jobAction>
+#         <jobName>${JOB_NAME}</jobName>
+#     </cornerstone>
+URL_XML="%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22us-ascii%22%3F%3E%3Ccornerstone%3E%3CclientName%3E${USER_NAME/ /}%3C%2FclientName%3E%3CqntClientName%3E${QNT_NAME/ /}%3C%2FqntClientName%3E%3CjobAction%3EgetJobParameters%3C%2FjobAction%3E%3CjobName%3E${JOB_NAME/ /}%3C%2FjobName%3E%3C%2Fcornerstone%3E"
+
+FULL_URL="${URL_PATH}?${URL_QUERY}${URL_XML}&NSS=default&CSSECURITYCHECK=true"
+
+echo -e "\nUsing this URL:\n$FULL_URL\n"
+
+curl "$FULL_URL" | tee "$XML_FILE"
+
+echo -e "\n\nThis output also saved as $XML_FILE\n"
+
+exit 0

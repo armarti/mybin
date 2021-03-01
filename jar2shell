@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+THIS="$(basename $0)"
+if [ "$1" = '-h' -o "$1" = '--help' -o -z "$1" ]; then
+    echo "Usage: $THIS <JAR>"
+	echo "The output will be JAR.sh."
+	echo "This is based on https://superuser.com/a/912956/419802"
+	exit 1
+fi
+
+JAR="$1"
+if [ ! -f "$JAR" ]; then
+	echo "'$JAR' is not a valid filename."
+	exit 2
+fi
+
+SHELL_CMDS='MYSELF=$(which "$0" 2>/dev/null)\n
+[ $? -gt 0 -a -f "$0" ] && MYSELF="./$(basename "$0")"\n
+exec java -jar $MYSELF "$@"\n
+exit $?\n
+'
+
+EXE="${JAR}.sh"
+echo -e $SHELL_CMDS > "$EXE"
+cat "$JAR" >> "$EXE"
+chmod +x "$EXE"
+
+echo "'$EXE' created."
+exit 0

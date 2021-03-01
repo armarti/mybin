@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+import requests
+
+
+def quantum_randos(numtype='uint8', numnums=4, numsize=0, separator='.'):
+    url_params = {
+        'type': numtype,
+        'length': numnums,
+        'size': numsize,
+    }
+    doc = requests.get('https://qrng.anu.edu.au/API/jsonI.php', params=url_params).json()
+    if doc['success']:
+        return separator.join([str(i) for i in doc['data']])
+    else:
+        raise Exception('Error getting data')
+
+
+if __name__ == '__main__':
+
+    def range_check(argname, val, minimum, maximum):
+        if not (minimum <= val <= maximum):
+            raise argparse.ArgumentTypeError("Required: {0} <= {1} <= {1}".format(argname, minimum, maximum))
+        return val
+
+    import argparse
+    description = "ANU Quantum Random Numbers Server\nhttps://qrng.anu.edu.au/API/api-demo.php"
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('--length', '-l', type=int, default=4, required=False,
+                        help="How many numbers to return, choose a number in the range [1, 1024]")
+    parser.add_argument('--type', '-t', type=str, choices=('uint8', 'uint16', 'hex16'), default='uint8', required=False,
+                        help=("uint8 = integers between 0–255, \nuint16 = returns integers between 0–65535, \n"
+                              "hex16 = returns hexadecimal characters between 00–ff"))
+    parser.add_argument('--size', '-z', type=int, default=1, required=False,
+                        help="Block size. If type=hex16, choose a number in the range [1, 1024]")
+    parser.add_argument('--sep', '-s', type=str, default='.', help="Separator between the numeros.")
+    args = parser.parse_args()
+
+    length = range_check('length', args.length, 1, 1024)
+    sizze = range_check('size', args.size, 1, 1024)
+    val = quantum_randos(args.type, length, sizze, args.sep)
+    print(val)
