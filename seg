@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+function seg() { local sl="${1:-1}"; local el="${2:-$(( $sl + 9 ))}"; local fd="$3"; tail -n+${sl} ${fd} | head -n $(( $el - $sl + 1 )); }
