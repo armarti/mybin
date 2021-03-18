@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+cd ~/.wxGlade
+(
+    ./app/wxglade $@ 2> current.log
+    #/usr/local/bin/python app/wxglade.py $@ 2> current.log
+    CLOSE_DATE=$(date +%Y%m%d_%H%M%S)
+    mv current.log logs/${CLOSE_DATE}.log
+    cd logs
+    gzip ${CLOSE_DATE}.log
+    exit 0
+) &
